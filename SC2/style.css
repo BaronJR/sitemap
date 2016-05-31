@@ -1,0 +1,173 @@
+body {
+ background: #272525;
+}
+
+#body {
+  margin: 0px;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica;
+  color: #fff;
+  padding: 0px;
+}
+
+h5 { margin:0; }
+table a { padding:4px 6px; border-radius:2px; }
+table a.selected { background:#494949; }
+table a:hover { color:white; }
+
+/* Tooltips */
+.tooltipHide .view-tooltip  {
+   opacity: 0;
+}
+
+.view-tooltip  {
+	border: 2px solid rgb(65, 65, 65);
+	background: rgba(32, 32, 32, 0.98);
+	border-radius: 5px;
+	padding: 5px;
+	text-align: center;
+	opacity: 1;
+}
+.view-tooltip span  {
+	 font-size: 11px;
+	 color: #ccc;
+	 margin-left: 6px;
+}
+.view-tooltip + .view-tooltip  {
+  margin-top: -8px;
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+
+label {
+    display: inline-block;
+    width: 5em;
+  }
+  
+.node {
+  cursor: pointer;
+  z-index: 0;
+  position: absolute;
+}
+.node:not(.leaf):hover circle.views {
+  stroke: #FFF;
+  
+}
+.node.leaf {
+  cursor: help;
+}
+.node:not(.leaf) circle.views {
+  /*stroke: #494949;*/
+}
+
+.node circle.views {
+  stroke-width: 2.5px;
+}
+
+.node circle.total {
+  fill: rgba(73,73,73,1);
+  pointer-events: none;
+  transition: fill 500ms ease;
+}
+.linear .node circle.total {
+  fill: rgba(255,255,255,0.06);
+}
+
+.node text {
+  font-size: 12px;
+  color: #fff;
+}
+
+path.link {
+  fill: none;
+  stroke: #494949;
+  stroke-width: 1px;
+}
+
+text {
+  fill: #fff;
+  text-shadow: 1px 1px 2px #000;
+}
+
+#chart, #header, #footer {
+  position: relative;
+  top: 0;
+}
+
+#header, #footer {
+  z-index: 1;
+  display: block;
+  font-size: 36px;
+  font-weight: 300;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000;
+}
+
+#header.inverted, #footer.inverted {
+  color: #000;
+  text-shadow: 1px 1px 4px #000;
+}
+
+#header {
+  top: 80px;
+  left: 140px;
+  width: 1000px;
+}
+
+#footer {
+  top: 10px;
+  left: 20px;
+  position: absolute;
+  text-align: left;
+}
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+pre {
+  font-size: 18px;
+}
+
+line {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.string, .regexp {
+  color: #f39;
+}
+
+.keyword {
+  color: #00c;
+}
+
+.comment {
+  color: #777;
+  font-style: oblique;
+}
+
+.number {
+  color: #369;
+}
+
+.class, .special {
+  color: #1181B8;
+}
+
+a:link, a:visited {
+  color: #fff;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #666;
+}
+
+.hint {
+  font-size: 13px;
+  color: #999;
+}

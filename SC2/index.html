@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <link type="text/css" rel="stylesheet" href="style.css"/>
+    <script type="text/javascript" src="d3.js"></script>
+    <script type="text/javascript" src="d3.layout.js"></script> 
+    <script type="text/javascript" src="data.js"></script> 
+  </head>
+  <body>
+
+    <div id="body" class="log">
+      <div id="footer">
+        SC2 site map
+        <table class="hint" cellpadding="5" cellspacing="5" width="200px">
+        <tr><td bgcolor="limegreen"></td><td></td><td>5m+ Page Views</td></tr>
+
+        <tr><td bgcolor="gold"></td><td></td><td>1m-4.9m Page Views</td></tr>
+        <tr><td bgcolor="darkorange"></td><td></td><td>100k-999k Page Views</td></tr>
+        <tr><td bgcolor="crimson"></td><td></td><td>0-99k Page Views</td></tr>
+        <tr><td bgcolor="lightsteelblue"></td><td></td><td>No data</td></tr>
+        <tr><td colspan="3"><h5>Data from 10/01/2014 - 03/31/2015</h5></td></tr>
+        <tr><td colspan="3"><a class="selected" href="#log">Heroes</a><a href="#linear">StarCraft</a><a>Hearthstone</a><a>Overwatch</a><a>WoW</a><a>Diablo</a></td></tr>
+    </table>
+      </div>
+    <div id="chart"></div>
+    </div>
+    <script type="text/javascript">
+function numberWithCommas(x) {
+    x = x.toString();
+    var pattern = /(-?\d+)(\d{3})/;
+    while (pattern.test(x))
+        x = x.replace(pattern, "$1,$2");
+    return x;
+}
+
+var scales = Array.prototype.slice.call( document.querySelectorAll("table a") );
+var body = document.getElementById("body");
+scales.map(function(a){
+  a.addEventListener("click",function(e){
+    e.preventDefault();
+    scales.map(function(a){ a.classList.remove("selected"); });
+    a.classList.add("selected");
+    scale = a.hash.substr(1);
+    body.className = scale;
+    update(root);
+  });
+});
+
+var scale = "log";
+
+var m = [20, 120, 20, 120],
+    w = 1900 - m[1] - m[3],
+    h = 1050 - m[0] - m[2],
+    i = 0,
+    root;
+
+var color = d3.scale.category10();
+
+var tree = d3.layout.tree()
+    .size([h, w]);
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.y, d.x]; });
+
+var vis = d3.select("#chart").append("svg:svg")
+    .attr("width", w + m[1] + m[3])
+    .attr("height", h + m[0] + m[2])
+    .append("svg:g")
+    .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+    
+
+function init(json) {
+  root = json;
+  root.x0 = h / 2;
+  root.y0 = 0;
+  
+  // Propagate totals
+  function add(a,b){ return a+b; };
+  function total(d){
+    d.total = d.total || d.views;
+    if(d.children) {
+      d.total += d.children.map(total).reduce(add);
+    }
+    return d.total;
+  }
+  total(root);
+
+  function toggleAll(d) {
+    if (d.children) {
+      d.children.forEach(toggleAll);
+      toggle(d);
+    }
+  }
+
+  // Initialize the display to show a few nodes.
+  root.children.forEach(toggleAll);
+  toggle(root.children[1]);
+  //toggle(root.children[9].children[0]);
+
+  update(root);
+}
+
+
+function update(source) {   
+  
+  var duration = d3.event && d3.event.altKey ? 5000 : 500;
+
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root).reverse();
+
+  // Normalize for fixed-depth. This is the multiplier for horizontal depth spacing.
+  nodes.forEach(function(d) { d.y = d.depth * 320; });
+
+  // Update the nodes…
+  var node = vis.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });  
+         
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("svg:g")
+      .attr("class", "node tooltipHide")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .classed("leaf", function(d){ return !(d._children || d.children) })
+
+    // Toggle the class for the tooltips to show/hide when you mouse enter/leave
+      .on("mouseenter", function(d) { this.classList.remove("tooltipHide") })
+      .on("mouseleave", function(d) { this.classList.add("tooltipHide") })
+      .on("click", function(d) { this.classList.toggle("active"); toggle(d); update(d); })
+
+  nodeEnter.append("svg:circle")
+      .attr("class","total")
+      .attr("r", 1e-1)
+
+  nodeEnter.append("svg:circle")
+      .attr("class","views")
+      .attr("r", 1e-6)
+      .style("fill", "#272525")
+      
+  nodeEnter.append("svg:circle")
+      .attr("class","children")
+      .attr("r", 1e-6)
+      
+  // Append the object for the tooltip
+  var tooltip = nodeEnter.append("svg:foreignObject")
+      .attr("width", 190)
+      .attr("height", 100)
+      .attr("transform", function(d) { return (d._children || d.children) ? "translate(26,-25)" : "translate(-216, -25)" })
+  tooltip.append("xhtml:div")
+        .attr("class", "view-tooltip")
+        .text(function(d, i) { if (d.views !== false) return numberWithCommas(d.views); else return ("") })
+        .style("color", function(d) { return color(d.group); })
+        .append("span")
+          .text(function(d, i) { if (d.views !== false) return "page views"; else return ("Data not yet available") })
+  tooltip.append("xhtml:div")
+        .attr("class", "view-tooltip")
+        .text(function(d, i) { if (d.total != null && d.total!==false) return numberWithCommas(d.total); else return ("") })
+        .style("color", function(d) { return "white"; })
+        .append("span")
+          .text(function(d, i) { if (d.total != null) return d.total===false?"":"total views"; else return ("Data not yet available") })
+   
+  nodeEnter.append("svg:text")
+      .attr("x", function(d) { return d.children || d._children ? -22 : 22; })
+      .attr("dy", ".35em")
+      .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+      .text(function(d) { return d.name; })
+      .style("fill-opacity", 1e-6);
+      
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+  nodeUpdate.select("circle.views")
+      .attr("r", function(d){
+          if( d.views ){
+            return scale == "linear" ? d.views/1000000*2 : Math.pow(1.2,Math.log(d.views))/2;
+          } else {
+            return Math.pow(2,6-d.group)/2;
+          }
+      })
+      .style("fill", function(d) { return color(d.group); });
+      
+  nodeUpdate.select("circle.total")
+      .attr("r", function(d){
+          return d.total ? ( scale == "linear" ? d.total/1000000*2 : Math.pow(1.2,Math.log(d.total))/2 ) : 0;
+      })
+  nodeUpdate.select("circle.children")
+      .attr("r", function(d){
+          return Math.min( 3, (scale == "linear" ? d.views/1000000*2 : Math.pow(1.2,Math.log(d.views))/2)-1.5 );
+      })
+      .style("fill", function(d){
+          return (d.children || d._children) ? "#272525" : "transparent"
+      })
+      
+          
+  nodeUpdate.select("text")
+      .style("fill-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = vis.selectAll("path.link")
+      .data(tree.links(nodes), function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("svg:path", "g")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      })
+    .transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+}
+
+// Toggle children.
+function toggle(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+}
+
+init(data);
+
+    </script>
+  </body>
+</html>
